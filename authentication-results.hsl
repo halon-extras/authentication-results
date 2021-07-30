@@ -2,24 +2,22 @@ class AuthenticationResults
 {
     private $authresult = [];
 
-    function SPF($ptypes = none)
+    function SPF($senderip, $senderhelo, $senderdomain, $ptypes = none)
     {
-        global $senderip, $senderhelo, $senderdomain;
-
-        $this->authresult["spf"]["result"] = spf($senderip, $senderhelo,  $senderdomain, ["extended_result" => true])["result"];
+        $this->authresult["spf"]["result"] = spf_query($senderip, $senderhelo,  $senderdomain)["result"];
         $this->authresult["spf"]["ptype"] = $senderdomain ? ["smtp.mailfrom" => $senderdomain] : ["smtp.helo" => $senderhelo];
 
         if (is_array($ptypes)) $this->authresult["spf"]["ptype"] += $ptypes;
         return $this;
     }
 
-    function DKIM($ptypes = none)
+    function DKIM($mime, $ptypes = none)
     {
-        foreach (MIME("0")->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
+        foreach ($mime->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
         {
             if ($i >= 5) break;
 
-            $dkimresult = DKIMVerify($dkimsign);
+            $dkimresult = $mime->verifyDKIM($dkimsign);
             $this->authresult["dkim"] = ["result" => $dkimresult["result"], "ptype" => []];
             if (isset($dkimresult["tags"]["d"]))
                 $this->authresult["dkim"]["ptype"] += ["header.d" => $dkimresult["tags"]["d"]];
@@ -70,9 +68,9 @@ class AuthenticationResults
         return $this;
     }
 
-    function toString()
+    function toString($hostname = "")
     {
-        $result = gethostname().";";
+        $result = $hostname ? $hostname.";" : gethostname().";";
 
         if (length($this->authresult))
         {    
