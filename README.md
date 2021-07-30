@@ -9,7 +9,7 @@ $arguments["mail"]->addHeader("Authentication-Results",
     ->SPF($connection["remoteip"], $connection["helo"]["host"], $transaction["senderaddress"]["domain"], ["smtp.remote-ip" => $connection["remoteip"]])
     ->DKIM($arguments["mail"])
     ->DMARC()
-    ->toString(),
+    ->toString(gethostname()),
     ["encode" => false]
 );
 ```
