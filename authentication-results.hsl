@@ -2,9 +2,9 @@ class AuthenticationResults
 {
     private $authresult = [];
 
-    function SPF($senderip, $senderhelo, $senderdomain, $ptypes = none)
+    function SPF($spf, $senderhelo, $senderdomain, $ptypes = none)
     {
-        $this->authresult["spf"]["result"] = spf_query($senderip, $senderhelo,  $senderdomain)["result"];
+        $this->authresult["spf"]["result"] = $spf["result"];
         $this->authresult["spf"]["ptype"] = $senderdomain ? ["smtp.mailfrom" => $senderdomain] : ["smtp.helo" => $senderhelo];
 
         if (is_array($ptypes)) $this->authresult["spf"]["ptype"] += $ptypes;
@@ -33,30 +33,23 @@ class AuthenticationResults
         return $this;
     }
 
-    function DMARC($ptypes = none)
+    function DMARC($dmarc, $ptypes = none)
     {
-        $dmarcresult = ScanDMARC();
+        $p = $dmarc["result"];
 
-        if ($dmarcresult == "permerror") {
-            $this->authresult["dmarc"]["result"] = $dmarcresult;
-        } else {
-            foreach ($dmarcresult as $d => $p)
-            {
-                switch ($p)
-                {
-                    case "none":
-                    case "reject":
-                    case "quarantine":
-                        $p = "fail";
-                        break;
-                    case "policy_absent":
-                        $p = "none";
-                        break;
-                }
-                $this->authresult["dmarc"]["result"] = $p;
-                $this->authresult["dmarc"]["ptype"] = ["header.from" => $d];
-            }        
+        switch ($p)
+        {
+            case "none":
+            case "reject":
+            case "quarantine":
+                $p = "fail";
+                break;
+            case "policy_absent":
+                $p = "none";
+                break;
         }
+        $this->authresult["dmarc"]["result"] = $p;
+        if ($dmarc["pdomain"]) $this->authresult["dmarc"]["ptype"] = ["header.from" => $dmarc["pdomain"]];
 
         if (is_array($ptypes)) $this->authresult["dmarc"]["ptype"] += $ptypes;
         return $this;
