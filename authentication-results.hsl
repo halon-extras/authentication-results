@@ -1,6 +1,12 @@
 class AuthenticationResults
 {
+    private $hostname = "";
     private $authresult = [];
+
+    constructor($opts = [])
+    {
+        $this->hostname = $opts["hostname"] ? $opts["hostname"] : gethostname();
+    }
 
     function SPF($spf, $senderhelo, $senderdomain, $ptypes = none)
     {
@@ -61,9 +67,9 @@ class AuthenticationResults
         return $this;
     }
 
-    function toString($hostname = "")
+    function toString()
     {
-        $result = $hostname ? $hostname.";" : gethostname().";";
+        $result = $this->hostname.";";
 
         if (length($this->authresult))
         {    

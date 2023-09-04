@@ -27,11 +27,11 @@ $spf = spf_query($connection["remoteip"], $connection["helo"]["host"], $transact
 $dmarc = dmarc($arguments["mail"], $connection["remoteip"], $connection["helo"]["host"], $transaction["senderaddress"]["domain"]);
 
 $arguments["mail"]->addHeader("Authentication-Results",
-    AuthenticationResults()
+    AuthenticationResults(["hostname" => gethostname()])
     ->SPF($spf, $connection["helo"]["host"], $transaction["senderaddress"]["domain"], ["smtp.remote-ip" => $connection["remoteip"]])
     ->DKIM($arguments["mail"])
     ->DMARC($dmarc)
-    ->toString(gethostname()),
+    ->toString(),
     ["encode" => false]
 );
 ```
