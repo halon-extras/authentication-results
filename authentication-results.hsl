@@ -24,18 +24,18 @@ class AuthenticationResults
             if ($i >= 5) break;
 
             $dkimresult = $mime->verifyDKIM($dkimsign);
-            $this->authresult["dkim"] = ["result" => $dkimresult["result"], "ptype" => []];
+            $dkim = ["result" => $dkimresult["result"], "ptype" => $ptypes ? $ptypes : []];
             if (isset($dkimresult["tags"]["d"]))
-                $this->authresult["dkim"]["ptype"] += ["header.d" => $dkimresult["tags"]["d"]];
+                $dkim["ptype"] += ["header.d" => $dkimresult["tags"]["d"]];
             if (isset($dkimresult["tags"]["s"]))
-                $this->authresult["dkim"]["ptype"] += ["header.s" => $dkimresult["tags"]["s"]];
+                $dkim["ptype"] += ["header.s" => $dkimresult["tags"]["s"]];
             if (isset($dkimresult["tags"]["a"]))
-                $this->authresult["dkim"]["ptype"] += ["header.a" => $dkimresult["tags"]["a"]];
+                $dkim["ptype"] += ["header.a" => $dkimresult["tags"]["a"]];
             if (isset($dkimresult["tags"]["b"]))
-                $this->authresult["dkim"]["ptype"] += ["header.b" => pcre_replace(''/[\s\r\n]/'', "", $dkimresult["tags"]["b"])[:8]];
+                $dkim["ptype"] += ["header.b" => pcre_replace(''/[\s\r\n]/'', "", $dkimresult["tags"]["b"])[:8]];
+            $this->authresult["dkim"][] = $dkim;
         }
 
-        if (is_array($ptypes)) $this->authresult["dkim"]["ptype"] += $ptypes;
         return $this;
     }
 
@@ -75,15 +75,18 @@ class AuthenticationResults
         {    
             foreach ($this->authresult as $method => $i)
             {
-                $result .= "\r\n\t$method=".$i["result"];
-                if (is_array($i["ptype"]))
+                foreach (isset($i["result"]) ? [$i] : $i as $t)
                 {
-                    foreach ($i["ptype"] as $ptype => $value)
+                    $result .= "\r\n\t$method=".$t["result"];
+                    if (is_array($t["ptype"]))
                     {
-                        $result .= " $ptype=$value";
+                        foreach ($t["ptype"] as $ptype => $value)
+                        {
+                            $result .= " $ptype=$value";
+                        }
                     }
+                    $result .= ";";
                 }
-                $result .= ";";
             }
         } else {
             $result .= " none";
