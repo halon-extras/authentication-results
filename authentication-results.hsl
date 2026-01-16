@@ -17,6 +17,50 @@ class AuthenticationResults
         return $this;
     }
 
+    // draft-martin-authentication-results-tls-03
+
+    function TLS($tls, $ptypes = none)
+    {
+        if (!$tls)
+            $this->authresult["tls"]["result"] = "none";
+        else
+        {
+            if (!$tls["peercert"])
+                $this->authresult["tls"]["result"] = "fail (no client certificate)";
+            else if ($tls["peercert"] and $tls["peercert"]["error"] == 0)
+                $this->authresult["tls"]["result"] = "pass (verified)";
+            else if ($tls["peercert"] and $tls["peercert"]["error"] == 10)
+                $this->authresult["tls"]["result"] = "fail (expired)";
+            else if ($tls["peercert"] and $tls["peercert"]["error"] == 19)
+                $this->authresult["tls"]["result"] = "selfsigned";
+            else
+                $this->authresult["tls"]["result"] = "fail (unverified)";
+
+            $this->authresult["tls"]["ptype"]["tls.v"] = $tls["protocol"];
+            $this->authresult["tls"]["ptype"]["key.ciphersuite"] = $tls["cipher"];
+            $this->authresult["tls"]["ptype"]["key.length"] = $tls["keysize"];
+
+            if ($tls["peercert"])
+            {
+                $clientcert = X509($tls["peercert"]["x509"]);
+                $this->authresult["tls"]["ptype"]["cert.client"] ="\"".
+			pcre_replace(#/["\r\n]/, "",
+				array_join(array_map(function ($x) { return $x[0]."=".$x[1]; }, $clientcert->subject()), ","))."\"";
+                $alt = $clientcert->subject_alt_name();
+                if ($alt["DNS"])
+                    $this->authresult["tls"]["ptype"]["cert.clientalt"] = "\"".
+			pcre_replace(#/["\r\n]/, "",
+				array_join(array_map(function ($x) { return "DNS:".$x; }, $alt["DNS"]), ","))."\"";
+                $this->authresult["tls"]["ptype"]["cert.clientissuer"] = "\"".
+			pcre_replace(#/["\r\n]/, "",
+				array_join(array_map(function ($x) { return $x[0]."=".$x[1]; }, $clientcert->issuer()), ","))."\"";
+            }
+        }
+
+        if (is_array($ptypes)) $this->authresult["tls"]["ptype"] += $ptypes;
+        return $this;
+    }
+
     function DKIM($mime, $ptypes = none)
     {
         foreach ($mime->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
