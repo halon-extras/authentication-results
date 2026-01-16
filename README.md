@@ -25,11 +25,17 @@ import { AuthenticationResults } from "extras://authentication-results";
 
 $spf = spf_query($connection["remoteip"], $connection["helo"]["host"], $transaction["senderaddress"]["domain"]);
 $dmarc = dmarc($arguments["mail"], $connection["remoteip"], $connection["helo"]["host"], $transaction["senderaddress"]["domain"]);
+$dkims = [];
+foreach ($arguments["mail"]->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
+{
+    if ($i >= 5) break;
+    $dkims[] = $arguments["mail"]->verifyDKIM($dkimsign);
+}
 
 $arguments["mail"]->addHeader("Authentication-Results",
     AuthenticationResults(["hostname" => gethostname()])
     ->SPF($spf, $connection["helo"]["host"], $transaction["senderaddress"]["domain"], ["smtp.remote-ip" => $connection["remoteip"]])
-    ->DKIM($arguments["mail"])
+    ->DKIM($dkims)
     ->DMARC($dmarc)
     ->toString(),
     ["encode" => false]
