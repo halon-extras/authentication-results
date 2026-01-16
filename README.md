@@ -37,7 +37,7 @@ $arguments["mail"]->addHeader("Authentication-Results",
     ->SPF($spf, $connection["helo"]["host"], $transaction["senderaddress"]["domain"], ["smtp.remote-ip" => $connection["remoteip"]])
     ->DKIM($dkims)
     ->DMARC($dmarc)
-    ->toString(),
+    ->toString(["multiline" => true]),
     ["encode" => false]
 );
 ```
