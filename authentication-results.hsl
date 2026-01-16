@@ -124,7 +124,7 @@ class AuthenticationResults
         return $this;
     }
 
-    function toString()
+    function toString($opts = [])
     {
         $result = $this->hostname.";";
 
@@ -134,7 +134,11 @@ class AuthenticationResults
             {
                 foreach (isset($i["result"]) ? [$i] : $i as $t)
                 {
-                    $result .= "\r\n\t$method=".$t["result"];
+                    if ($opts["multiline"] ?? true)
+                        $result .= "\r\n\t";
+                    else
+                        $result .= " ";
+                    $result .= "$method=".$t["result"];
                     if (is_array($t["ptype"]))
                     {
                         foreach ($t["ptype"] as $ptype => $value)
