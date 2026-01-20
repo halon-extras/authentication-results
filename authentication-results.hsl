@@ -61,7 +61,7 @@ class AuthenticationResults
         return $this;
     }
 
-    private function addDKIMSignature($dkimresult)
+    private function addDKIMSignature($dkimresult, $ptypes)
     {
         $dkim = ["result" => $dkimresult["result"], "ptype" => $ptypes ? $ptypes : []];
         if (isset($dkimresult["tags"]["d"]))
@@ -83,14 +83,14 @@ class AuthenticationResults
         if (is_array($mime))
         {
             foreach ($mime as $signature)
-                return $this->addDKIMSignature($signature);
+                return $this->addDKIMSignature($signature, $ptypes);
         }
 
         foreach ($mime->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
         {
             if ($i >= 5) break;
 
-            $this->addDKIMSignature($mime->verifyDKIM($dkimsign));
+            $this->addDKIMSignature($mime->verifyDKIM($dkimsign), $ptypes);
         }
 
         return $this;
