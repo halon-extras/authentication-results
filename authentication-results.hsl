@@ -83,7 +83,8 @@ class AuthenticationResults
         if (is_array($mime))
         {
             foreach ($mime as $signature)
-                return $this->addDKIMSignature($signature, $ptypes);
+                $this->addDKIMSignature($signature, $ptypes);
+            return $this;
         }
 
         foreach ($mime->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
