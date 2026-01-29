@@ -82,17 +82,23 @@ class AuthenticationResults
 
         if (is_array($mime))
         {
+            if (length($mime) == 0)
+                return $this->addMethod("dkim", "none");
+
             foreach ($mime as $signature)
                 $this->addDKIMSignature($signature, $ptypes);
             return $this;
         }
 
+        $i = none;
         foreach ($mime->getHeaders("DKIM-Signature", ["field" => true]) as $i => $dkimsign)
         {
             if ($i >= 5) break;
 
             $this->addDKIMSignature($mime->verifyDKIM($dkimsign), $ptypes);
         }
+        if ($i === none)
+            return $this->addMethod("dkim", "none");
 
         return $this;
     }
