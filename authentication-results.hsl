@@ -125,9 +125,9 @@ class AuthenticationResults
         return $this;
     }
 
-    function addMethod($name, $result, $ptypes = [])
+    function addMethod($name, $result, $ptypes = [], $comment = none)
     {
-        $this->authresult[$name] = ["result" => $result, "ptype" => $ptypes];
+        $this->authresult[$name] = ["result" => $result, "ptype" => $ptypes, "comment" => $comment];
         return $this;
     }
 
@@ -142,18 +142,41 @@ class AuthenticationResults
                 foreach (isset($i["result"]) ? [$i] : $i as $t)
                 {
                     if ($opts["multiline"] ?? true)
+                    {
                         $result .= "\r\n\t";
+                        $lineLen = 4; // tab counts as 4
+                    }
                     else
+                    {
                         $result .= " ";
-                    $result .= "$method=".$t["result"];
+                        $lineLen = none;
+                    }
+
+                    $methodResult = "$method=".$t["result"];
+                    if ($t["comment"]) $methodResult .= " (%s)" % [ $t["comment"] ];
+                    $result .= $methodResult;
+                    if ($lineLen !== none) $lineLen += 1 + strlen($methodResult); // leading space before method on same line as tab
+
                     if (is_array($t["ptype"]))
                     {
                         foreach ($t["ptype"] as $ptype => $value)
                         {
-                            $result .= " $ptype=$value";
+                            $token = " $ptype=$value";
+                            if ($lineLen !== none)
+                            {
+                                if ($lineLen + strlen($token) > $opts["maxlength"] ?? 78)
+                                {
+                                    $result .= "\r\n\t ";
+                                    $lineLen = 5; // tab (4) + 1 space indent
+                                    $token = "$ptype=$value";
+                                }
+                                $lineLen += strlen($token);
+                            }
+                            $result .= $token;
                         }
                     }
                     $result .= ";";
+                    if ($lineLen !== none) $lineLen += 1;
                 }
             }
         } else {
